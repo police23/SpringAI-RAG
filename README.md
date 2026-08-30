@@ -8,10 +8,8 @@ Dự án này triển khai toàn bộ hệ thống **RAG (Retrieval-Augmented Ge
 
 - **Giao thức MCP Native qua STDIO**: Phản hồi tức thì, kết nối ổn định không phụ thuộc mạng HTTP.
 - **RAG Tools**:
-  - `search_knowledge_base`: Truy vấn ngữ cảnh tương đồng cao nhất từ Qdrant theo câu hỏi của người dùng.
-  - `ingest_file_to_knowledge_base`: Nạp tài liệu từ ổ đĩa (PDF, Word, Markdown, TXT qua Apache Tika).
+  - `rag_ask`: Tìm kiếm ngữ cảnh và tổng hợp prompt RAG cho LLM.
   - `refresh_knowledge_base`: Xóa sạch vector database và nạp lại toàn bộ dữ liệu mẫu (fresh start).
-  - `get_knowledge_base_status`: Xem trạng thái collection và embedding model.
 - **Qdrant Vector Database**: Chạy trong Docker (`6333` HTTP Dashboard, `6334` gRPC).
 - **HuggingFace Local Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` ONNX chạy hoàn toàn offline cục bộ trong Java.
 

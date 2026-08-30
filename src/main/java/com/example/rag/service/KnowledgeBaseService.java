@@ -1,6 +1,7 @@
 package com.example.rag.service;
 
 import com.example.rag.config.RagProperties;
+import com.example.rag.model.RagPromptPayload;
 import com.example.rag.model.SearchResult;
 import io.qdrant.client.QdrantClient;
 import org.slf4j.Logger;
@@ -12,13 +13,9 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.qdrant.QdrantVectorStore;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,12 +27,10 @@ public class KnowledgeBaseService {
 
     private final VectorStore vectorStore;
     private final RagProperties ragProperties;
-    private final ResourceLoader resourceLoader;
 
-    public KnowledgeBaseService(VectorStore vectorStore, RagProperties ragProperties, ResourceLoader resourceLoader) {
+    public KnowledgeBaseService(VectorStore vectorStore, RagProperties ragProperties) {
         this.vectorStore = vectorStore;
         this.ragProperties = ragProperties;
-        this.resourceLoader = resourceLoader;
     }
 
     /**
@@ -107,13 +102,74 @@ public class KnowledgeBaseService {
     }
 
     /**
-     * Ingest a local file (PDF, TXT, Markdown, DOCX, etc.) via Tika Document Reader.
+     * Build structured RAG prompt payload with System Prompt, retrieved Context, and User Prompt.
      */
-    public int ingestFile(File file) {
-        if (!file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException("File does not exist or is not a regular file: " + file.getAbsolutePath());
+    public RagPromptPayload buildRagPromptPayload(String query, Integer topK, Double minScore) {
+        List<SearchResult> searchResults = search(query, topK, minScore);
+        String contextStr;
+
+        if (searchResults.isEmpty()) {
+            contextStr = "No matching excerpts found in knowledge base.";
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < searchResults.size(); i++) {
+                SearchResult res = searchResults.get(i);
+                String source = res.metadata() != null ? String.valueOf(res.metadata().getOrDefault("source", "unknown")) : "unknown";
+                sb.append(String.format("[%d] Source: %s (Relevance Score: %.3f)\n%s\n\n",
+                        i + 1, source, res.score() != null ? res.score() : 1.0,
+                        res.content() != null ? res.content().trim() : ""));
+            }
+            contextStr = sb.toString().trim();
         }
 
+        String fullPrompt = ragProperties.getPromptTemplate()
+                .replace("{context}", contextStr)
+                .replace("{question}", query);
+
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("topK", (topK != null && topK > 0) ? topK : ragProperties.getDefaultTopK());
+        metadata.put("minScore", (minScore != null && minScore >= 0.0 && minScore <= 1.0) ? minScore : ragProperties.getDefaultMinScore());
+        metadata.put("collectionName", ragProperties.getCollectionName());
+
+        return new RagPromptPayload(
+                query,
+                contextStr,
+                fullPrompt,
+                searchResults.size(),
+                metadata
+        );
+    }
+
+    /**
+     * Ingest document file(s) or all files in a directory (such as sample-data) into Qdrant vector database.
+     */
+    public int ingestFile(File file) {
+        if (file == null) {
+            file = new File("src/main/resources/sample-data");
+        }
+
+        if (!file.exists()) {
+            throw new IllegalArgumentException("File or directory does not exist: " + file.getAbsolutePath());
+        }
+
+        if (file.isDirectory()) {
+            File[] files = file.listFiles((dir, name) -> !name.startsWith("."));
+            int totalChunks = 0;
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile()) {
+                        totalChunks += ingestSingleFile(f);
+                    }
+                }
+            }
+            log.info("Finished ingesting directory '{}' ({} total chunks)", file.getAbsolutePath(), totalChunks);
+            return totalChunks;
+        }
+
+        return ingestSingleFile(file);
+    }
+
+    private int ingestSingleFile(File file) {
         log.info("Reading file: {}", file.getAbsolutePath());
         Resource resource = new FileSystemResource(file);
         TikaDocumentReader reader = new TikaDocumentReader(resource);
@@ -139,28 +195,6 @@ public class KnowledgeBaseService {
         log.info("Successfully indexed file '{}' ({} chunks) into Qdrant collection '{}'", 
                 file.getName(), chunks.size(), ragProperties.getCollectionName());
         return chunks.size();
-    }
-
-    /**
-     * Ingest sample company handbook.
-     */
-    public int ingestSampleHandbook() {
-        try {
-            Resource sampleResource = resourceLoader.getResource("classpath:sample-data/company_handbook.md");
-            if (sampleResource.exists()) {
-                File tempFile = File.createTempFile("company_handbook_", ".md");
-                tempFile.deleteOnExit();
-                try (InputStream is = sampleResource.getInputStream()) {
-                    Files.copy(is, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                }
-                int chunks = ingestFile(tempFile);
-                log.info("Ingested sample handbook ({} chunks)", chunks);
-                return chunks;
-            }
-        } catch (Exception e) {
-            log.error("Failed to ingest sample handbook: {}", e.getMessage(), e);
-        }
-        return 0;
     }
 
     /**
@@ -190,7 +224,7 @@ public class KnowledgeBaseService {
             int reIngestedChunks = 0;
             boolean shouldReIngest = (reIngestSample != null) ? reIngestSample : ragProperties.isAutoIngestSample();
             if (shouldReIngest) {
-                reIngestedChunks = ingestSampleHandbook();
+                reIngestedChunks = ingestFile(new File("src/main/resources/sample-data"));
             }
 
             result.put("status", "SUCCESS");
@@ -204,17 +238,5 @@ public class KnowledgeBaseService {
         }
 
         return result;
-    }
-
-    /**
-     * Return knowledge base info.
-     */
-    public Map<String, Object> getStatus() {
-        Map<String, Object> status = new LinkedHashMap<>();
-        status.put("collectionName", ragProperties.getCollectionName());
-        status.put("embeddingModel", ragProperties.getEmbeddingModel());
-        status.put("vectorStore", "Qdrant");
-        status.put("status", "READY");
-        return status;
     }
 }
