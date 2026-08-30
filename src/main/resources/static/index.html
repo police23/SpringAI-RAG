@@ -104,33 +104,17 @@
                     <i class="fa-solid fa-plug-circle-bolt text-emerald-400"></i> Antigravity MCP Integration
                 </h2>
                 <p class="text-xs text-slate-400 leading-relaxed mb-4">
-                    MCP Server này cung cấp các Tool cho Antigravity (hoặc bất kỳ MCP Client nào). Khi bạn đặt câu hỏi, LLM sẽ tự động gọi tool <code class="text-indigo-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">search_knowledge_base</code> để lấy context và trả lời bạn.
+                    MCP Server này cung cấp các Tool cho Antigravity (hoặc bất kỳ MCP Client nào). Khi bạn đặt câu hỏi, LLM sẽ tự động gọi tool <code class="text-indigo-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">rag_ask</code> để lấy toàn bộ RAG Prompt & context và trả lời bạn.
                 </p>
 
                 <!-- Tools List -->
                 <div class="space-y-3 mb-5">
                     <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-mono font-bold text-indigo-400">search_knowledge_base</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300">Retrieval Tool</span>
+                            <span class="text-xs font-mono font-bold text-indigo-400">rag_ask</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300">RAG Prompt Tool</span>
                         </div>
-                        <p class="text-[11px] text-slate-400 mt-1">Truy xuất các đoạn trích liên quan nhất kèm score & metadata từ Qdrant.</p>
-                    </div>
-
-                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-mono font-bold text-purple-400">ingest_file_to_knowledge_base</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300">Ingest Tool</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 mt-1">Đọc và index file từ đường dẫn cục bộ vào Qdrant vector database.</p>
-                    </div>
-
-                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-mono font-bold text-teal-400">get_knowledge_base_status</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded bg-teal-500/10 text-teal-300">Status Tool</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 mt-1">Kiểm tra trạng thái collection và embedding model.</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Truy xuất ngữ cảnh liên quan nhất từ Qdrant và đóng gói System Prompt + Context + Query hoàn chỉnh.</p>
                     </div>
                 </div>
 

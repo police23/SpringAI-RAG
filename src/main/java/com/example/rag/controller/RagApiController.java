@@ -108,12 +108,4 @@ public class RagApiController {
         Map<String, Object> result = knowledgeBaseService.refreshKnowledgeBase(reIngestSample);
         return ResponseEntity.ok(result);
     }
-
-    /**
-     * Knowledge base status.
-     */
-    @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> status() {
-        return ResponseEntity.ok(knowledgeBaseService.getStatus());
-    }
 }

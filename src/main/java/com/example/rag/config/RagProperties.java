@@ -47,6 +47,25 @@ public class RagProperties {
      */
     private boolean autoIngestSample;
 
+    /**
+     * Complete RAG prompt template combining instructions, context, and question
+     */
+    private String promptTemplate = """
+            You are a helpful, accurate, and professional AI assistant. Answer the user's question using ONLY the provided context retrieved from the knowledge base.
+
+            Guidelines:
+            1. Base your answer strictly on the provided context excerpts. Do not fabricate, assume, or extrapolate information not supported by the context.
+            2. If the context does not contain enough relevant information to answer the question, state clearly: "I cannot find relevant information in the knowledge base to answer your question."
+            3. Maintain a clean, direct, and concise response style.
+
+            Context Excerpts:
+            --------------------------------------------------
+            {context}
+            --------------------------------------------------
+
+            User Question: {question}
+            """;
+
     public RagProperties() {
     }
 
@@ -112,5 +131,13 @@ public class RagProperties {
 
     public void setAutoIngestSample(boolean autoIngestSample) {
         this.autoIngestSample = autoIngestSample;
+    }
+
+    public String getPromptTemplate() {
+        return promptTemplate;
+    }
+
+    public void setPromptTemplate(String promptTemplate) {
+        this.promptTemplate = promptTemplate;
     }
 }

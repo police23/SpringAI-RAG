@@ -38,10 +38,10 @@ rag:
   embedding-model: sentence-transformers/all-MiniLM-L6-v2 (Local HuggingFace ONNX)
 
   # Số lượng kết quả chunk liên quan tối đa trả về
-  default-top-k: 4
+  default-top-k: 3
 
   # Ngưỡng độ tương đồng tối thiểu (0.0 -> 1.0, ví dụ: 0.60 hoặc 0.0 để lấy tất cả top-k)
-  default-min-score: 0.60
+  default-min-score: 0.5
 
   # Kích thước mỗi chunk tài liệu (token/từ)
   chunk-size: 500
