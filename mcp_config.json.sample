@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "rag-qdrant-server": {
+      "command": "java",
+      "args": [
+        "--enable-native-access=ALL-UNNAMED",
+        "-Dfile.encoding=UTF-8",
+        "-jar",
+        "d:/RAG/target/rag-mcp-server-0.0.1-SNAPSHOT.jar",
+        "--spring.ai.mcp.server.stdio=true",
+        "--spring.main.banner-mode=off",
+        "--logging.pattern.console=",
+        "--server.port=0",
+        "--spring.ai.vectorstore.qdrant.host=localhost",
+        "--spring.ai.vectorstore.qdrant.port=6334"
+      ]
+    }
+  }
+}

@@ -1,0 +1,5 @@
+.git/
+.gitignore
+.gitattributes
+HELP.md
+*.log

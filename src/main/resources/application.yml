@@ -1,0 +1,62 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: rag-mcp-server
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+      accept-single-value-as-array: true
+  ai:
+    vectorstore:
+      qdrant:
+        host: localhost
+        port: 6334
+        collection-name: ${rag.collection-name:rag_knowledge_base}
+        initialize-schema: true
+    embedding:
+      transformer:
+        cache:
+          directory: ${user.home}/.spring-ai/models
+    mcp:
+      server:
+        name: rag-qdrant-server
+        version: 1.0.0
+        type: SYNC
+        protocol: sse
+
+# ===================================================================
+# RAG & VECTOR SEARCH CONFIGURATION
+# Chỉnh sửa các thông số hoạt động của RAG tại đây:
+# ===================================================================
+rag:
+  # Tên collection trong Qdrant
+  collection-name: rag_knowledge_base
+
+  # Thông tin model embedding
+  embedding-model: sentence-transformers/all-MiniLM-L6-v2 (Local HuggingFace ONNX)
+
+  # Số lượng kết quả chunk liên quan tối đa trả về
+  default-top-k: 4
+
+  # Ngưỡng độ tương đồng tối thiểu (0.0 -> 1.0, ví dụ: 0.60 hoặc 0.0 để lấy tất cả top-k)
+  default-min-score: 0.60
+
+  # Kích thước mỗi chunk tài liệu (token/từ)
+  chunk-size: 500
+
+  # Độ chồng lấn (overlap) giữa các chunk liền kề để bảo toàn ngữ cảnh (token/từ)
+  chunk-overlap: 50
+
+  # Độ dài ký tự tối thiểu của một chunk
+  min-chunk-size-chars: 100
+
+  # Tự động nạp file mẫu sample-data/company_handbook.md khi khởi động
+  auto-ingest-sample: true
+
+logging:
+  level:
+    com.example.rag: DEBUG
+    org.springframework.ai.mcp: INFO
+    org.springframework.ai.vectorstore: INFO
